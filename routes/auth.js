@@ -26,7 +26,10 @@ function ensureValid(req) {
 // POST /api/auth/register
 router.post(
   "/register",
-  body("email").isEmail().withMessage("Email nije ispravan.").normalizeEmail(),
+  body("email")
+    .isEmail()
+    .withMessage("Email nije ispravan.")
+    .normalizeEmail({ gmail_remove_dots: false }), //ugasi opciju da si miču točke (dots) prije @.
   body("password")
     .isString()
     .withMessage("Lozinka je obavezna.")
@@ -67,18 +70,11 @@ router.post(
         throw e;
       }
 
-      const token = jwt.sign(
-        { sub: result.insertedId.toString(), role: newUser.role },
-        process.env.JWT_SECRET,
-        { expiresIn: "7d" },
-      );
-
       res.status(201).json({
-        token,
+        message: "Korisnik uspješno registriran. Molimo prijavite se.",
         user: {
           id: result.insertedId.toString(),
           email: newUser.email,
-          role: newUser.role,
         },
       });
     } catch (err) {
@@ -91,7 +87,10 @@ router.post(
 // POST /api/auth/login
 router.post(
   "/login",
-  body("email").isEmail().withMessage("Email nije ispravan.").normalizeEmail(),
+  body("email")
+    .isEmail()
+    .withMessage("Email nije ispravan.")
+    .normalizeEmail({ gmail_remove_dots: false }), //ugasi opciju da si miču točke (dots) prije @.
   body("password")
     .isString()
     .withMessage("Lozinka je obavezna.")
