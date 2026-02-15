@@ -5,6 +5,7 @@ import healthRouter from "./routes/health.js";
 import authRouter from "./routes/auth.js";
 import protectedRouter from "./routes/protected.js";
 import workoutsRouter from "./routes/workouts.js";
+import adminRouter from "./routes/admin.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,6 +15,7 @@ app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/protected", protectedRouter);
 app.use("/api/workouts", workoutsRouter);
+app.use("/api/admin", adminRouter);
 
 const db = await connectToDatabase();
 
