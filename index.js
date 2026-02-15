@@ -1,6 +1,10 @@
 import express from "express";
+import { config } from "dotenv";
+import cors from "cors";
+
 import { connectToDatabase } from "./config/db.js";
 import { notFound, errorHandler } from "./middleware/error.js";
+
 import healthRouter from "./routes/health.js";
 import authRouter from "./routes/auth.js";
 import protectedRouter from "./routes/protected.js";
@@ -8,12 +12,22 @@ import workoutsRouter from "./routes/workouts.js";
 import adminRouter from "./routes/admin.js";
 
 const app = express();
+config();
+
 const PORT = process.env.PORT || 3000;
+const allowedOrigin = process.env.CLIENT_URL || "http://localhost:5173S";
 
 app.use(express.json());
+app.use(cors({ origin: allowedOrigin }));
+
 app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
-app.use("/api/protected", protectedRouter);
+
+//provjera je li aplikacija u produkciji ili developmentu
+if (process.env.NODE_ENV !== "production") {
+  app.use("/api/protected", protectedRouter);
+}
+
 app.use("/api/workouts", workoutsRouter);
 app.use("/api/admin", adminRouter);
 
