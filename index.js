@@ -4,6 +4,7 @@ import { notFound, errorHandler } from "./middleware/error.js";
 import healthRouter from "./routes/health.js";
 import authRouter from "./routes/auth.js";
 import protectedRouter from "./routes/protected.js";
+import workoutsRouter from "./routes/workouts.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,6 +13,7 @@ app.use(express.json());
 app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/protected", protectedRouter);
+app.use("/api/workouts", workoutsRouter);
 
 const db = await connectToDatabase();
 
