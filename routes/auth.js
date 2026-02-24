@@ -121,7 +121,7 @@ router.post(
       const token = jwt.sign(
         { sub: user._id.toString(), role: user.role },
         process.env.JWT_SECRET,
-        { expiresIn: "12h" },
+        { expiresIn: "3h" },
       );
 
       res.status(200).json({
@@ -195,12 +195,9 @@ router.patch(
         { $set: { passwordHash: newHash, updatedAt: new Date() } },
       );
 
-      return res
-        .status(204)
-        .json({
-          message:
-            "Lozinka uspješno promijenjena. Molimo ponovno se prijavite.",
-        });
+      return res.status(204).json({
+        message: "Lozinka uspješno promijenjena. Molimo ponovno se prijavite.",
+      });
     } catch (err) {
       next(err);
     }
