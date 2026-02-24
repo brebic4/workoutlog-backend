@@ -121,7 +121,7 @@ router.post(
       const token = jwt.sign(
         { sub: user._id.toString(), role: user.role },
         process.env.JWT_SECRET,
-        { expiresIn: "7d" },
+        { expiresIn: "12h" },
       );
 
       res.status(200).json({
@@ -134,6 +134,74 @@ router.post(
       });
     } catch (err) {
       if (err.statusCode) res.status(err.statusCode);
+      next(err);
+    }
+  },
+);
+
+// PATCH /api/auth/password
+// Ulogirani korisnik mijenja lozinku -> nakon toga frontend radi logout
+router.patch(
+  "/password",
+  requireAuth,
+  body("newPassword")
+    .notEmpty()
+    .withMessage("Nova lozinka je obavezna.")
+    .isString()
+    .isLength({ min: 8 })
+    .withMessage("Nova lozinka mora imati najmanje 8 znakova.")
+    .matches(/[A-Za-z]/)
+    .withMessage("Lozinka mora sadržavati barem jedno slovo.")
+    .matches(/[0-9]/)
+    .withMessage("Lozinka mora sadržavati barem jedan broj."),
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ error: errors });
+      }
+
+      const userId = ObjectId.isValid(req.user.id)
+        ? new ObjectId(req.user.id)
+        : null;
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ message: "Neispravan user id u tokenu." });
+      }
+
+      const db = await connectToDatabase();
+      const users = db.collection("users");
+
+      const user = await users.findOne({ _id: userId });
+      if (!user) {
+        return res.status(401).json({ message: "Korisnik ne postoji." });
+      }
+
+      const newPassword = String(req.body.newPassword);
+
+      // zabrani istu lozinku
+      const same = await bcrypt.compare(newPassword, user.passwordHash);
+      if (same) {
+        return res
+          .status(400)
+          .json({ message: "Nova lozinka mora biti drugačija." });
+      }
+
+      const newHash = await bcrypt.hash(newPassword, 10);
+
+      await users.updateOne(
+        { _id: userId },
+        { $set: { passwordHash: newHash, updatedAt: new Date() } },
+      );
+
+      return res
+        .status(204)
+        .json({
+          message:
+            "Lozinka uspješno promijenjena. Molimo ponovno se prijavite.",
+        });
+    } catch (err) {
       next(err);
     }
   },

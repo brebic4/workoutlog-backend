@@ -25,8 +25,6 @@ function toObjectId(id) {
   return new ObjectId(id);
 }
 
-const allowedIntensity = ["LOW", "MEDIUM", "HIGH"];
-
 /**
  * POST /api/workouts
  * Owner = logged user
@@ -50,24 +48,11 @@ router.post(
     .withMessage("durationMin je obavezan.")
     .isInt({ min: 1, max: 600 })
     .withMessage("durationMin mora biti 1-600."),
-  body("intensity")
-    .optional()
-    .isIn(allowedIntensity)
-    .withMessage("intensity mora biti LOW, MEDIUM ili HIGH."),
   body("notes")
     .optional()
     .isString()
     .isLength({ max: 1000 })
     .withMessage("notes max 1000 znakova."),
-  body("tags")
-    .optional()
-    .isArray({ max: 20 })
-    .withMessage("tags mora biti array (max 20)."),
-  body("tags.*")
-    .optional()
-    .isString()
-    .isLength({ min: 1, max: 20 })
-    .withMessage("svaki tag mora biti 1-20 znakova."),
   async (req, res, next) => {
     try {
       ensureValid(req);
@@ -81,16 +66,14 @@ router.post(
         throw new Error("Neispravan user id u tokenu.");
       }
 
-      const { date, type, durationMin, intensity, notes, tags } = req.body;
+      const { date, type, durationMin, notes } = req.body;
 
       const doc = {
         userId,
         date: new Date(date), // ISO string -> Date
         type: String(type).trim(),
         durationMin: Number(durationMin),
-        intensity: intensity ? String(intensity) : "MEDIUM",
         notes: notes ? String(notes) : "",
-        tags: Array.isArray(tags) ? tags.map((t) => String(t).trim()) : [],
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -222,24 +205,11 @@ router.patch(
     .optional()
     .isInt({ min: 1, max: 600 })
     .withMessage("durationMin mora biti 1-600."),
-  body("intensity")
-    .optional()
-    .isIn(allowedIntensity)
-    .withMessage("intensity mora biti LOW, MEDIUM ili HIGH."),
   body("notes")
     .optional()
     .isString()
     .isLength({ max: 1000 })
     .withMessage("notes max 1000 znakova."),
-  body("tags")
-    .optional()
-    .isArray({ max: 20 })
-    .withMessage("tags mora biti array (max 20)."),
-  body("tags.*")
-    .optional()
-    .isString()
-    .isLength({ min: 1, max: 20 })
-    .withMessage("svaki tag mora biti 1-20 znakova."),
   async (req, res, next) => {
     try {
       ensureValid(req);
@@ -265,15 +235,7 @@ router.patch(
       if (req.body.durationMin !== undefined)
         patch.durationMin = Number(req.body.durationMin);
 
-      if (req.body.intensity !== undefined)
-        patch.intensity = String(req.body.intensity);
-
       if (req.body.notes !== undefined) patch.notes = String(req.body.notes);
-
-      if (req.body.tags !== undefined)
-        patch.tags = Array.isArray(req.body.tags)
-          ? req.body.tags.map((t) => String(t).trim())
-          : [];
 
       patch.updatedAt = new Date();
 
@@ -299,13 +261,6 @@ router.patch(
       }
 
       const w = await workouts.findOne({ _id: workoutId, userId });
-
-      res.json({
-        ...w,
-        id: w._id.toString(),
-        _id: undefined,
-        userId: w.userId.toString(),
-      });
 
       res.json({
         ...w,
